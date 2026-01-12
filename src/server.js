@@ -15,6 +15,8 @@ import { seedAdmin } from './utils/seedAdmin.js';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import userRoutes from "./routes/userRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +34,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/chat', chatRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/health', (_req, res) => res.json({ ok: true }));

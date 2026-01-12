@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pedidos</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="container between">
+      <h1 class="title">Pedidos</h1>
+      <nav class="actions">
+        <a href="/index.html" class="btn ghost">Productos</a>
+        <a href="/users.html" class="btn ghost">Usuarios</a>
+        <button id="logoutBtn" class="btn ghost">Salir</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container grid">
+    <section class="card">
+      <div class="row between align-center">
+        <h2 class="h2">Listado</h2>
+        <span id="count" class="badge">0</span>
+      </div>
+
+      <div class="row gap" style="margin: 12px 0;">
+        <label>Estado:</label>
+        <select id="status" class="input" style="max-width: 220px;">
+          <option value="">Todos</option>
+          <option value="pending">En curso (pending)</option>
+          <option value="completed">Comprado (completed)</option>
+        </select>
+        <button id="refreshBtn" class="btn primary" type="button">Cargar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="ordersTable">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Usuario</th>
+              <th>Estado</th>
+              <th class="right">Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p id="error" class="note error" hidden></p>
+    </section>
+
+    <section class="card" id="detailCard" style="display:none;">
+      <h2 class="h2">Detalle del pedido</h2>
+      <div id="detail"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/orders.js"></script>
+  <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>

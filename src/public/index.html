@@ -14,15 +14,19 @@
   />
 </head>
 <body>
-  <header class="app-header">
-    <div class="container between">
-      <h1 class="title">Productos</h1>
-      <nav class="actions">
-        <a href="/chat.html" class="btn ghost"><i class="fa-solid fa-comments"></i> Chat</a>
-        <button id="logoutBtn" class="btn ghost"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
-      </nav>
-    </div>
-  </header>
+ <header class="app-header">
+  <div class="container between">
+    <h1 class="title">Productos</h1>
+
+    <nav class="actions">
+      <a href="/users.html" class="btn ghost" data-admin-only>Usuarios</a>
+      <a href="/orders.html" class="btn ghost" data-admin-only>Pedidos</a>
+
+      <a href="/chat.html" class="btn ghost">Chat</a>
+      <button id="logoutBtn" class="btn ghost" type="button">Salir</button>
+    </nav>
+  </div>
+</header>
 
   <main class="container grid">
     <section class="stack">

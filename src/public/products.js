@@ -116,7 +116,6 @@ async function load() {
     alert('Error al cargar productos: ' + e.message);
   }
 }
-3
 
 
 load();

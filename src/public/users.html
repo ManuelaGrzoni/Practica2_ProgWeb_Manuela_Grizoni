@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Usuarios</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="container between">
+      <h1 class="title">Usuarios</h1>
+      <nav class="actions">
+        <a href="/index.html" class="btn ghost">Productos</a>
+        <a href="/chat.html" class="btn ghost">Chat</a>
+        <button id="logoutBtn" class="btn ghost">Salir</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="row between align-center">
+        <h2 class="h2">Listado</h2>
+        <span id="count" class="badge">0</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="usersTable">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p id="error" class="note error" hidden></p>
+    </section>
+  </main>
+
+  <script type="module" src="/users.js"></script>
+  <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>
