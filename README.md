@@ -1,6 +1,12 @@
 # ProgWeb_Practica1
 
+usuario
+user@example.com
+user123
 
+admin
+admin@example.com
+admin123
 
 Aplicación web completa desarrollada como práctica de **Programación Web**, que integra **autenticación con JWT**, **gestión de productos con roles**, **persistencia en MongoDB** y un **chat en tiempo real** usando **Socket.IO**.
 

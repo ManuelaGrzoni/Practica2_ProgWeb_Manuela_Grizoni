@@ -174,3 +174,12 @@ function mostrarMensaje(texto, tipo) {
   mensaje.style.display = "block";
   setTimeout(() => mensaje.style.display = "none", 3000);
 }
+
+// --- LOGOUT (no rompe aunque no exista el botón) ---
+const logoutBtn = document.getElementById("logoutBtn");
+logoutBtn?.addEventListener("click", (e) => {
+  e.preventDefault();
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/login.html";
+});

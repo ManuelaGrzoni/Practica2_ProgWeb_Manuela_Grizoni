@@ -40,7 +40,7 @@
         </div>
       </form>
 
-      <form id="form" class="card">
+      <form id="form" class="card" data-admin-only="">
         <h2 class="h2">Crear / Editar</h2>
         <input type="hidden" id="pid" />
         <div class="stack">
@@ -73,7 +73,7 @@
             <tr>
               <th>Nombre</th>
               <th class="right">Precio</th>
-              <th>Acciones</th>
+              <th id="thActions" data-admin-only>Acciones</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -89,12 +89,13 @@
   </footer>
 
   <script type="module" src="/products.js"></script>
-  <script>
-    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login.html';
-    });
+   });
   </script>
 </body>
 </html>
