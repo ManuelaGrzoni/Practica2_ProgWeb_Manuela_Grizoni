@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carrito</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="container between">
+      <h1 class="title">Carrito</h1>
+      <nav class="actions">
+        <a href="/index.html" class="btn ghost">Productos</a>
+        <button id="logoutBtn" class="btn ghost" type="button">Salir</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="row between align-center">
+        <h2 class="h2">Items</h2>
+        <span id="total" class="badge">0.00 €</span>
+      </div>
+      
+      <div class="row between align-center" style="margin-top: 12px;">
+        <span class="note">Al finalizar se creará un pedido.</span>
+        <button id="checkoutBtn" class="btn primary" type="button">Finalizar compra</button>
+        </div>
+
+        <p id="msg" class="note" hidden></p>
+
+
+      <div class="table-wrap">
+        <table class="table" id="cartTable">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="right">Precio</th>
+              <th class="right">Cantidad</th>
+              <th class="right">Subtotal</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p id="empty" class="note" hidden>Tu carrito está vacío.</p>
+    </section>
+  </main>
+
+  <script type="module" src="/cart.js"></script>
+  <script>
+    document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    });
+  </script>
+</body>
+</html>

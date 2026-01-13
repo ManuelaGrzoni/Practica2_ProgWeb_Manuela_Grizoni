@@ -1,9 +1,13 @@
 // src/public/products.js
-const API = '/api/products';
+import { addToCart, cartCount } from "./cartStore.js";
+import { graphqlRequest } from "./graphqlClient.js";
+
+const API = "/api/products";
 
 console.log("products.js cargado ✅");
 
-const token = localStorage.getItem('token');
+const token = localStorage.getItem("token");
+
 function getPayload(token) {
   try {
     const payload = token.split(".")[1];
@@ -14,67 +18,89 @@ function getPayload(token) {
 }
 
 const payload = token ? getPayload(token) : null;
-const isAdmin = payload?.role === 'admin';
+const isAdmin = payload?.role === "admin";
 
 console.log("role en token:", payload?.role, "isAdmin:", isAdmin);
 
+if (!isAdmin) {
+  document.querySelectorAll('[data-admin-only]').forEach(el => el.remove());
+}
+// --- Elementos DOM ---
+const tbody = document.querySelector("#list tbody");
 
-const tbody = document.querySelector('#list tbody');
-const form = document.getElementById('form');
-const pid = document.getElementById('pid');
-const nameEl = document.getElementById('name');
-const priceEl = document.getElementById('price');
-const descEl = document.getElementById('description');
-const imgEl = document.getElementById('imageUrl');
-const cancelBtn = document.getElementById('cancelBtn');
+const form = document.getElementById("form");
+const pid = document.getElementById("pid");
+const nameEl = document.getElementById("name");
+const priceEl = document.getElementById("price");
+const descEl = document.getElementById("description");
+const imgEl = document.getElementById("imageUrl");
+const cancelBtn = document.getElementById("cancelBtn");
 
-const searchForm = document.getElementById('search');
-const qEl = document.getElementById('q');
-const minEl = document.getElementById('min');
-const maxEl = document.getElementById('max');
+const searchForm = document.getElementById("search");
+const qEl = document.getElementById("q");
+const minEl = document.getElementById("min");
+const maxEl = document.getElementById("max");
 
-// --- UI por rol ---
-document.querySelectorAll('[data-admin-only]').forEach(el => {
-  el.style.display = isAdmin ? '' : 'none';
+// cache para poder “Añadir” sin refetch
+let itemsCache = [];
+
+// --- UI por rol: oculta lo que tenga data-admin-only ---
+document.querySelectorAll("[data-admin-only]").forEach((el) => {
+  el.style.display = isAdmin ? "" : "none";
 });
 
 function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// badge del carrito en header (si existe)
+function updateCartBadge() {
+  const badge = document.getElementById("cartBadge");
+  if (badge) badge.textContent = String(cartCount());
+}
+
+updateCartBadge();
+
+// fetch products
 async function fetchProducts(params = {}) {
-  // limpiar params vacíos
-  const clean = {};
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== '' && v !== null && v !== undefined) clean[k] = v;
-  }
+  const variables = {
+    q: params.q || null,
+    min: params.min !== "" ? Number(params.min) : null,
+    max: params.max !== "" ? Number(params.max) : null,
+  };
 
-  const query = new URLSearchParams(clean).toString();
-  const url = `${API}${query ? `?${query}` : ''}`;
+  const data = await graphqlRequest(
+    `
+    query($q: String, $min: Float, $max: Float) {
+      products(q: $q, min: $min, max: $max) {
+        _id
+        name
+        price
+        description
+        imageUrl
+      }
+    }
+    `,
+    variables
+  );
 
-  console.log("URL fetch:", url); // <-- debug
-
-  const res = await fetch(url, { headers: { ...authHeaders() } });
-  if (!res.ok) throw new Error('Error al cargar productos');
-
-  const data = await res.json();
-  console.log("RESPUESTA API:", data); // <-- debug
-
-  return Array.isArray(data) ? data : (data.items || []);
+  return data.products;
 }
 
 
+// -------- RENDER ----------
 function renderRows(items) {
-  tbody.innerHTML = '';
+  if (!tbody) return;
 
-  // contador arriba a la derecha
-  const countEl = document.getElementById('count');
+  tbody.innerHTML = "";
+
+  const countEl = document.getElementById("count");
   if (countEl) countEl.textContent = `${items.length} ítems`;
 
   for (const p of items) {
-    const tr = document.createElement('tr');
+    const tr = document.createElement("tr");
 
-    const name = p.name ?? p.nombre ?? '';
+    const name = p.name ?? p.nombre ?? "";
     const price = Number(p.price ?? p.precio ?? 0);
 
     if (isAdmin) {
@@ -82,14 +108,17 @@ function renderRows(items) {
         <td>${name}</td>
         <td class="right">${price.toFixed(2)} €</td>
         <td>
-          <button data-edit="${p._id}">✏️</button>
-          <button data-del="${p._id}">🗑️</button>
+          <button class="btn ghost" data-edit="${p._id}">✏️</button>
+          <button class="btn ghost" data-del="${p._id}">🗑️</button>
         </td>
       `;
     } else {
       tr.innerHTML = `
         <td>${name}</td>
         <td class="right">${price.toFixed(2)} €</td>
+        <td>
+          <button class="btn ghost" data-add="${p._id}">Añadir</button>
+        </td>
       `;
     }
 
@@ -97,95 +126,120 @@ function renderRows(items) {
   }
 }
 
+// -------- LOAD ----------
 async function load() {
   try {
     const items = await fetchProducts({
-      q: qEl.value.trim(),
-      min: minEl.value,
-      max: maxEl.value
+      q: qEl?.value?.trim() || "",
+      min: minEl?.value || "",
+      max: maxEl?.value || "",
     });
 
-    console.log("items recibidos:", items);
-
-    const countEl = document.getElementById('count');
-    if (countEl) countEl.textContent = `${items.length} ítems`;
-
+    itemsCache = items; // guarda para “Añadir”
     renderRows(items);
   } catch (e) {
     console.error(e);
-    alert('Error al cargar productos: ' + e.message);
+    alert("Error al cargar productos: " + e.message);
   }
 }
 
-
 load();
 
-searchForm.addEventListener('submit', e => {
+// -------- BUSCAR ----------
+searchForm?.addEventListener("submit", (e) => {
   e.preventDefault();
   load();
 });
 
-// --- Acciones tabla (solo admin) ---
-tbody.addEventListener('click', async (e) => {
+// -------- CLICK EN TABLA ----------
+tbody?.addEventListener("click", async (e) => {
+  // --- USER: añadir al carrito ---
+  const addId = e.target.getAttribute("data-add");
+  if (addId) {
+    const p = itemsCache.find((x) => x._id === addId);
+    if (!p) return;
+
+    addToCart(
+      {
+        productId: p._id,
+        name: p.name ?? p.nombre ?? "",
+        price: Number(p.price ?? p.precio ?? 0),
+      },
+      1
+    );
+
+    updateCartBadge();
+    return;
+  }
+
+  // --- ADMIN: editar / borrar ---
   if (!isAdmin) return;
 
-  const editId = e.target.getAttribute('data-edit');
-  const delId  = e.target.getAttribute('data-del');
+  const editId = e.target.getAttribute("data-edit");
+  const delId = e.target.getAttribute("data-del");
 
   if (editId) {
-    const res = await fetch(`${API}/${editId}`, { headers: { ...authHeaders() } });
+    const res = await fetch(`${API}/${editId}`, {
+      headers: { ...authHeaders() },
+    });
     const p = await res.json();
+
     pid.value = p._id;
     nameEl.value = p.name;
     priceEl.value = p.price;
-    descEl.value = p.description || '';
-    imgEl.value = p.imageUrl || '';
+    descEl.value = p.description || "";
+    imgEl.value = p.imageUrl || "";
   }
 
   if (delId) {
-    if (!confirm('¿Eliminar?')) return;
+    if (!confirm("¿Eliminar?")) return;
+
     const res = await fetch(`${API}/${delId}`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() }
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
     });
+
     if (res.ok) load();
-    else alert('No se pudo eliminar');
+    else alert("No se pudo eliminar");
   }
 });
 
-// --- Guardar (solo admin) ---
-form.addEventListener('submit', async (e) => {
+// -------- GUARDAR (solo admin) ----------
+form?.addEventListener("submit", async (e) => {
   if (!isAdmin) return;
 
   e.preventDefault();
+
   const body = {
     name: nameEl.value.trim(),
     price: Number(priceEl.value),
     description: descEl.value.trim(),
-    imageUrl: imgEl.value.trim()
+    imageUrl: imgEl.value.trim(),
   };
 
   const id = pid.value;
   const url = id ? `${API}/${id}` : API;
-  const method = id ? 'PUT' : 'POST';
+  const method = id ? "PUT" : "POST";
 
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(body)
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body),
   });
 
   if (res.ok) {
-    pid.value = '';
+    pid.value = "";
     form.reset();
     load();
   } else {
     const err = await res.json().catch(() => ({}));
-    alert(err.message || 'Error al guardar');
+    alert(err.message || "Error al guardar");
   }
 });
 
-cancelBtn.addEventListener('click', () => {
-  pid.value = '';
-  form.reset();
+
+// -------- CANCELAR ----------
+cancelBtn?.addEventListener("click", () => {
+  pid.value = "";
+  form?.reset();
 });

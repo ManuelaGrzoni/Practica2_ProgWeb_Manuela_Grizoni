@@ -1,4 +1,6 @@
-const API = "/api/orders";
+// src/public/orders.js  (GraphQL)
+import { graphqlRequest } from "./graphqlClient.js";
+
 const token = localStorage.getItem("token");
 
 function getPayload(token) {
@@ -23,17 +25,15 @@ const detailCard = document.getElementById("detailCard");
 const detailEl = document.getElementById("detail");
 
 function showError(msg) {
+  if (!errorEl) return;
   errorEl.hidden = false;
   errorEl.textContent = msg;
 }
 
 function clearError() {
+  if (!errorEl) return;
   errorEl.hidden = true;
   errorEl.textContent = "";
-}
-
-function authHeaders() {
-  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function fmtDate(iso) {
@@ -50,63 +50,97 @@ async function loadOrders() {
   if (!isAdmin) return showError("Solo admin puede ver pedidos.");
 
   clearError();
-  detailCard.style.display = "none";
-  detailEl.innerHTML = "";
+  if (detailCard) detailCard.style.display = "none";
+  if (detailEl) detailEl.innerHTML = "";
 
-  const params = new URLSearchParams();
-  if (statusEl.value) params.set("status", statusEl.value);
+  try {
+    const variables = { status: statusEl?.value || null };
 
-  const url = `${API}${params.toString() ? "?" + params.toString() : ""}`;
+    const data = await graphqlRequest(
+      `
+      query($status: String) {
+        orders(status: $status) {
+          _id
+          status
+          total
+          createdAt
+          user { username email role }
+        }
+      }
+      `,
+      variables
+    );
 
-  const res = await fetch(url, { headers: { ...authHeaders() } });
-  const data = await res.json().catch(() => []);
-  if (!res.ok) return showError(data.message || "Error cargando pedidos");
+    const orders = data.orders || [];
 
-  countEl.textContent = `${data.length}`;
-  tbody.innerHTML = "";
+    if (countEl) countEl.textContent = `${orders.length}`;
+    if (tbody) tbody.innerHTML = "";
 
-  for (const o of data) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${fmtDate(o.createdAt)}</td>
-      <td>${o.user?.email || o.user?.username || "—"}</td>
-      <td><span class="badge">${statusLabel(o.status)}</span></td>
-      <td class="right">${Number(o.total || 0).toFixed(2)} €</td>
-      <td><button class="btn ghost" data-view="${o._id}">Ver</button></td>
-    `;
-    tbody.appendChild(tr);
+    for (const o of orders) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${fmtDate(o.createdAt)}</td>
+        <td>${o.user?.email || o.user?.username || "—"}</td>
+        <td><span class="badge">${statusLabel(o.status)}</span></td>
+        <td class="right">${Number(o.total || 0).toFixed(2)} €</td>
+        <td><button class="btn ghost" data-view="${o._id}">Ver</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } catch (e) {
+    showError(e.message || "Error cargando pedidos");
   }
 }
 
 async function loadDetail(id) {
   clearError();
-  const res = await fetch(`${API}/${id}`, { headers: { ...authHeaders() } });
-  const o = await res.json().catch(() => null);
-  if (!res.ok) return showError(o?.message || "Error cargando detalle");
 
-  const user = o.user ? `${o.user.username} (${o.user.email})` : "—";
-  const itemsHtml = (o.items || []).map(it => {
-    return `<li>${it.quantity} × ${it.name} — ${(it.price * it.quantity).toFixed(2)} €</li>`;
-  }).join("");
+  try {
+    const data = await graphqlRequest(
+      `
+      query($id: ID!) {
+        order(id: $id) {
+          _id
+          status
+          total
+          createdAt
+          user { username email role }
+          items { name price quantity }
+        }
+      }
+      `,
+      { id }
+    );
 
-  detailEl.innerHTML = `
-    <p><b>Pedido:</b> ${o._id}</p>
-    <p><b>Usuario:</b> ${user}</p>
-    <p><b>Fecha:</b> ${fmtDate(o.createdAt)}</p>
-    <p><b>Estado:</b> ${statusLabel(o.status)}</p>
-    <p><b>Total:</b> ${Number(o.total).toFixed(2)} €</p>
-    <hr />
-    <p><b>Productos:</b></p>
-    <ul>${itemsHtml || "<li>Sin productos</li>"}</ul>
-  `;
+    const o = data.order;
+    if (!o) return showError("Pedido no encontrado");
 
-  detailCard.style.display = "block";
+    const user = o.user ? `${o.user.username} (${o.user.email})` : "—";
+    const itemsHtml = (o.items || [])
+      .map((it) => `<li>${it.quantity} × ${it.name} — ${(it.price * it.quantity).toFixed(2)} €</li>`)
+      .join("");
+
+    detailEl.innerHTML = `
+      <p><b>Pedido:</b> ${o._id}</p>
+      <p><b>Usuario:</b> ${user}</p>
+      <p><b>Fecha:</b> ${fmtDate(o.createdAt)}</p>
+      <p><b>Estado:</b> ${statusLabel(o.status)}</p>
+      <p><b>Total:</b> ${Number(o.total).toFixed(2)} €</p>
+      <hr />
+      <p><b>Productos:</b></p>
+      <ul>${itemsHtml || "<li>Sin productos</li>"}</ul>
+    `;
+
+    if (detailCard) detailCard.style.display = "block";
+  } catch (e) {
+    showError(e.message || "Error cargando detalle");
+  }
 }
 
-refreshBtn.addEventListener("click", loadOrders);
-statusEl.addEventListener("change", loadOrders);
+refreshBtn?.addEventListener("click", loadOrders);
+statusEl?.addEventListener("change", loadOrders);
 
-tbody.addEventListener("click", (e) => {
+tbody?.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-view]");
   if (!btn) return;
   loadDetail(btn.dataset.view);
