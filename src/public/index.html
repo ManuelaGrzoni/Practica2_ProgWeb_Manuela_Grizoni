@@ -19,8 +19,8 @@
     <h1 class="title">Productos</h1>
 
     <nav class="actions">
-      <a href="/users.html" class="btn ghost" data-admin-only>Usuarios</a>
-      <a href="/orders.html" class="btn ghost" data-admin-only>Pedidos</a>
+      <a href="/users.html" class="btn ghost" data-admin-only hidden>Usuarios</a>
+      <a href="/orders.html" class="btn ghost" data-admin-only hidden>Pedidos</a>
       <a href="/cart.html" class="btn ghost"> Carrito <span id="cartBadge" class="badge">0</span>
 </a>
       <a href="/chat.html" class="btn ghost">Chat</a>
@@ -45,7 +45,7 @@
         </div>
       </form>
 
-      <form id="form" class="card" data-admin-only="">
+      <form id="form" class="card" data-admin-only hidden>
         <h2 class="h2">Crear / Editar</h2>
         <input type="hidden" id="pid" />
         <div class="stack">
@@ -78,7 +78,7 @@
             <tr>
               <th>Nombre</th>
               <th class="right">Precio</th>
-              <th id="thActions" data-admin-only>Acciones</th>
+              <th id="thActions" data-admin-only hidden>Acciones</th>
             </tr>
           </thead>
           <tbody></tbody>
